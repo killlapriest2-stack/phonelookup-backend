@@ -1,0 +1,12 @@
+{
+  "expo": {
+    "extra": {
+      "eas": {
+        "projectId": "2814a1ef-7681-4980-a92e-e2e889b788f0"
+      }
+    },
+    "android": {
+      "package": "com.saata.openaibackend"
+    }
+  }
+}

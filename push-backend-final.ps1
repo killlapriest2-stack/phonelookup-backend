@@ -1,68 +1,33 @@
+# =============================
 # push-backend-final.ps1
+# =============================
 
-# ---------------------------
-# CONFIGURATION
-# ---------------------------
-$branchPrefix = "backend-update-"
-$secretPatterns = @("*.env", "*.ps1") # перевіряти на ключі в цих файлах
-$commitMessage = "Backend update - cleaned commit"
-
-# ---------------------------
-# CHECK GIT REPO
-# ---------------------------
-if (-Not (Test-Path ".git")) {
-    Write-Error "This script must be run in the root of a Git repository!"
+# Check if GITHUB_TOKEN is set
+if (-not $env:GITHUB_TOKEN) {
+    Write-Host "ERROR: GITHUB_TOKEN is not set" -ForegroundColor Red
     exit 1
 }
 
-# ---------------------------
-# CREATE NEW BRANCH
-# ---------------------------
-$newBranch = $branchPrefix + [int](Get-Random -Maximum 1000000000)
-Write-Host "Creating new branch: $newBranch" -ForegroundColor Cyan
-git checkout -b $newBranch
-
-# ---------------------------
-# CLEAN OLD REFERENCES AND GC
-# ---------------------------
-if (Test-Path ".git\refs\original") {
-    Remove-Item -Path .git\refs\original -Recurse -Force
+# Ensure we are on main branch
+$branch = git rev-parse --abbrev-ref HEAD
+if ($branch -ne "main") {
+    Write-Host "Switching to main branch..."
+    git checkout main
 }
 
-git reflog expire --all --expire=now
-git gc --prune=now --aggressive
-
-# ---------------------------
-# CHECK FOR SECRETS
-# ---------------------------
-$foundSecrets = @()
-foreach ($pattern in $secretPatterns) {
-    $files = Get-ChildItem -Recurse -Include $pattern
-    foreach ($file in $files) {
-        $content = Get-Content $file -Raw
-        if ($content -match "(?i)(AIza|sk-|key=|token|secret)") {
-            $foundSecrets += $file.FullName
-        }
-    }
-}
-
-if ($foundSecrets.Count -gt 0) {
-    Write-Host "ERROR: Secrets detected in the following files:" -ForegroundColor Red
-    $foundSecrets | ForEach-Object { Write-Host " - $_" -ForegroundColor Red }
-    Write-Host "Remove secrets or add to .gitignore before pushing." -ForegroundColor Red
-    exit 1
-}
-
-# ---------------------------
-# STAGE AND COMMIT
-# ---------------------------
+# Stage all changes
 git add .
-git commit -m $commitMessage
 
-# ---------------------------
-# PUSH TO GITHUB
-# ---------------------------
-git push origin $newBranch
+# Commit changes
+git commit -m "Backend update on main"
 
-Write-Host "`n✅ Push completed! New branch: $newBranch" -ForegroundColor Green
-Write-Host "Open a Pull Request from this branch to main on GitHub." -ForegroundColor Yellow
+# GitHub repository URL
+$repoURL = "https://github.com/killlapriest2-stack/phonelookup-backend.git"
+
+# Use token in HTTPS for authentication
+$secureURL = $repoURL -replace "https://", "https://$($env:GITHUB_TOKEN)@"
+
+# Push to main
+git push $secureURL main
+
+Write-Host "✅ Changes pushed successfully to main!" -ForegroundColor Green

@@ -1,33 +1,29 @@
-# =============================
 # push-backend-final.ps1
-# =============================
 
-# Check if GITHUB_TOKEN is set
+# Перевірка наявності GITHUB_TOKEN
 if (-not $env:GITHUB_TOKEN) {
-    Write-Host "ERROR: GITHUB_TOKEN is not set" -ForegroundColor Red
+    Write-Host "Error: GITHUB_TOKEN environment variable is not set." -ForegroundColor Red
     exit 1
 }
 
-# Ensure we are on main branch
-$branch = git rev-parse --abbrev-ref HEAD
-if ($branch -ne "main") {
-    Write-Host "Switching to main branch..."
-    git checkout main
+# Встановимо remote з використанням токена
+$repoUrl = "https://$($env:GITHUB_TOKEN)@github.com/killlapriest2-stack/phonelookup-backend.git"
+
+# Ініціалізація Git у поточній папці (якщо потрібно)
+if (-not (Test-Path ".git")) {
+    git init
+    git remote add origin $repoUrl
+} else {
+    git remote set-url origin $repoUrl
 }
 
-# Stage all changes
+# Додаємо всі зміни
 git add .
 
-# Commit changes
-git commit -m "Backend update on main"
+# Коміт
+git commit -m "Backend update on main" 
 
-# GitHub repository URL
-$repoURL = "https://github.com/killlapriest2-stack/phonelookup-backend.git"
+# Пуш на main
+git push origin main --force
 
-# Use token in HTTPS for authentication
-$secureURL = $repoURL -replace "https://", "https://$($env:GITHUB_TOKEN)@"
-
-# Push to main
-git push $secureURL main
-
-Write-Host "✅ Changes pushed successfully to main!" -ForegroundColor Green
+Write-Host "Changes pushed successfully to main!" -ForegroundColor Green

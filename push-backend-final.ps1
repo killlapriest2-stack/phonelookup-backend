@@ -1,29 +1,28 @@
 # push-backend-final.ps1
-# ----------------------
-# Push backend changes to main using PAT from environment variable
+# Push local changes to main using GITHUB_TOKEN
 
-# Перевірка наявності GITHUB_TOKEN
+# Ensure GITHUB_TOKEN is set
 if (-not $env:GITHUB_TOKEN) {
-    Write-Error "GITHUB_TOKEN environment variable not set. Set it with setx GITHUB_TOKEN <your_token>"
+    Write-Error "GITHUB_TOKEN environment variable is not set. Set it and rerun the script."
     exit 1
 }
 
-$RemoteURL = "https://$($env:GITHUB_TOKEN)@github.com/killlapriest2-stack/phonelookup-backend.git"
+# Set Git remote to use token for HTTPS
+$remoteUrl = "https://$($env:GITHUB_TOKEN)@github.com/killlapriest2-stack/phonelookup-backend.git"
 
-# Додати всі зміни
-git add .
+git remote set-url origin $remoteUrl
 
-# Commit із стандартним повідомленням
-git commit -m "Backend update on main" 
+# Stage all changes
+git add -A
 
-# Встановити URL для remote
-git remote set-url origin $RemoteURL
+# Commit changes
+git commit -m "Backend update on main" -a
 
-# Пуш на main
-git push origin main --force
-
-if ($LASTEXITCODE -eq 0) {
-    Write-Host "Changes pushed successfully to main!"
-} else {
+# Push to main
+try {
+    git push origin main
+    Write-Host "Changes pushed successfully to main!" -ForegroundColor Green
+} catch {
     Write-Error "Push failed. Check your token and repository permissions."
+    exit 1
 }
